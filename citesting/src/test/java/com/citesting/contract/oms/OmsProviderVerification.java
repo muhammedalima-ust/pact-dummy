@@ -5,8 +5,8 @@ import au.com.dius.pact.provider.junit5.PactVerificationContext;
 import au.com.dius.pact.provider.junit5.PactVerificationInvocationContextProvider;
 import au.com.dius.pact.provider.junitsupport.Provider;
 import au.com.dius.pact.provider.junitsupport.State;
-import au.com.dius.pact.provider.junitsupport.loader.PactBroker;
 import au.com.dius.pact.provider.junitsupport.loader.PactBrokerConsumerVersionSelectors;
+import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 import au.com.dius.pact.provider.junitsupport.loader.SelectorBuilder;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  
  
 @Provider("oms-provider")
-@PactBroker(url = "http://localhost:9292")
+@PactFolder("target/pacts")
 public class OmsProviderVerification {
  
     @PactBrokerConsumerVersionSelectors
