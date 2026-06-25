@@ -26,9 +26,7 @@ jobs:
             | tar xz -C $HOME
           echo "$HOME/pact/bin" >> $GITHUB_PATH
 
-      # Export CONTRACT_VERSION here so every subsequent step can use it.
-      # $GITHUB_ENV persists variables across steps; a local `export` inside
-      # one run: block is invisible to all other steps.
+
       - name: Set CONTRACT_VERSION
         run: echo "CONTRACT_VERSION=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
@@ -38,8 +36,7 @@ jobs:
           docker compose -f src/test/resources/docker-compose.pact-broker.yml down -v
           docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d --wait --wait-timeout 120
 
-          # --wait checks the in-container healthcheck.
-          # This curl loop confirms the port is reachable from the host runner.
+          
           echo "Waiting for broker to be reachable on host..."
           for i in {1..20}; do
             if curl -sf http://127.0.0.1:9292/diagnostic/status/heartbeat >/dev/null; then
@@ -51,31 +48,18 @@ jobs:
           docker compose -f src/test/resources/docker-compose.pact-broker.yml logs
           exit 1
 
-      # set +e prevents bash -e from exiting on the subshell assignment when
-      # the command returns non-zero. set -e re-enables it immediately after
-      # so all subsequent commands still fail fast on real errors.
+      
       - name: 2. Create Production Environment
         run: |
-          set +e
-          OUTPUT=$(pact-broker create-environment \
+          pact-broker ensure-environment \
             --name production \
             --display-name Production \
             --production \
-            --broker-base-url http://127.0.0.1:9292 2>&1)
-          EXIT=$?
-          set -e
-
-          echo "$OUTPUT"
-          if [ $EXIT -ne 0 ]; then
-            echo "$OUTPUT" | grep -q "already used" \
-              && echo "::notice::Environment already exists — skipping." \
-              || exit $EXIT
-          fi
+            --broker-base-url http://127.0.0.1:9292
 
       - name: 3. Run Pact Consumer Tests
         working-directory: citesting
         run: mvn -Dtest=PosOmsConsumerPactTest test
-        # Generates → citesting/target/pacts/POS-OMS.json
 
       - name: 4. Publish Pact to Broker
         working-directory: citesting
@@ -94,7 +78,7 @@ jobs:
             "response": {
               "status": 200,
               "headers": { "Content-Type": "application/json" },
-              "jsonBody": { "id": 123, "status": "CONFIRMED", "total": 42.0 }
+              "jsonBody": { "orderId": 123, "status": "CONFIRMED", "total": 42.0 }
             }
           }' > mappings/order.json
 
@@ -111,8 +95,7 @@ jobs:
           done
           exit 1
 
-      # -Dpactbroker.host/port override @PactBroker at runtime so the JVM
-      # connects to 127.0.0.1 instead of resolving localhost → ::1 (IPv6).
+      
       - name: 6. Run Pact Provider Verification + Publish Results
         working-directory: citesting
         run: |
@@ -122,10 +105,7 @@ jobs:
               -Dpactbroker.port=9292 \
               test
 
-      # Record oms-provider BEFORE can-i-deploy pos-consumer.
-      # can-i-deploy pos-consumer asks: "is the oms-provider that's live in
-      # production compatible with this consumer?" — the answer is always
-      # "unknown" until oms-provider is recorded as deployed here.
+      
       - name: 7. Record Deployment (oms-provider)
         run: |
           pact-broker record-deployment \
