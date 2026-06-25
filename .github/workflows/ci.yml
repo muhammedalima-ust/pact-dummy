@@ -26,16 +26,27 @@ jobs:
             | tar xz -C $HOME
           echo "$HOME/pact/bin" >> $GITHUB_PATH
 
-      
       - name: 1. Start Pact Broker
         working-directory: citesting
         run: |
-          docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d --wait --wait-timeout 120
-          docker compose -f src/test/resources/docker-compose.pact-broker.yml down -v
-          echo "Broker is healthy and ready at http://localhost:9292"
+          docker compose -f pact-tests/docker-compose.pact-broker.yml down -v
+          docker compose -f pact-tests/docker-compose.pact-broker.yml up -d --wait --wait-timeout 120
 
-      # set +e prevents bash -e from killing the script on the subshell assignment.
-      # set -e re-enables it so everything after still exits on real errors.
+          # Use 127.0.0.1 explicitly — localhost can resolve to ::1 (IPv6)
+          # on GitHub runners, but Docker only binds on IPv4 (0.0.0.0)
+          echo "Waiting for broker to be reachable on host..."
+          for i in {1..20}; do
+            if curl -sf http://127.0.0.1:9292/diagnostic/status/heartbeat >/dev/null; then
+              echo "Broker is reachable at http://127.0.0.1:9292"
+              exit 0
+            fi
+            echo "Attempt $i/20 — retrying in 3s..."
+            sleep 3
+          done
+          echo "Broker failed to become reachable after 60s"
+          docker compose -f pact-tests/docker-compose.pact-broker.yml logs
+          exit 1
+
       - name: 2. Create Production Environment
         run: |
           set +e
@@ -43,7 +54,7 @@ jobs:
             --name production \
             --display-name Production \
             --production \
-            --broker-base-url http://localhost:9292 2>&1)
+            --broker-base-url http://127.0.0.1:9292 2>&1)
           EXIT=$?
           set -e
 
@@ -66,7 +77,7 @@ jobs:
             --consumer-app-version="$(git rev-parse --short HEAD)" \
             --branch=main \
             --tag=week4 \
-            --broker-base-url=http://localhost:9292
+            --broker-base-url=http://127.0.0.1:9292
 
       - name: 5. Start Mock Provider (WireMock)
         run: |
@@ -107,7 +118,7 @@ jobs:
             --to-environment production \
             --retry-while-unknown 3 \
             --retry-interval 10 \
-            --broker-base-url http://localhost:9292
+            --broker-base-url http://127.0.0.1:9292
 
       - name: 8. can-i-deploy Gate (oms-provider)
         run: |
@@ -117,7 +128,7 @@ jobs:
             --to-environment production \
             --retry-while-unknown 3 \
             --retry-interval 10 \
-            --broker-base-url http://localhost:9292
+            --broker-base-url http://127.0.0.1:9292
 
       - name: 9. Record Deployment (pos-consumer)
         run: |
@@ -125,7 +136,7 @@ jobs:
             --pacticipant pos-consumer \
             --version $(git rev-parse --short HEAD) \
             --environment production \
-            --broker-base-url http://localhost:9292
+            --broker-base-url http://127.0.0.1:9292
 
       - name: 10. Record Deployment (oms-provider)
         run: |
@@ -133,4 +144,4 @@ jobs:
             --pacticipant oms-provider \
             --version $(git rev-parse --short HEAD) \
             --environment production \
-            --broker-base-url http://localhost:9292
+            --broker-base-url http://127.0.0.1:9292
