@@ -62,27 +62,34 @@ jobs:
       - name: 4. Start Mock Provider (WireMock)
         run: |
           mkdir -p mappings
+          
+          # GET Inventory Stub
           echo '{
-            "request": { "method": "GET", "url": "/order/123" },
+            "request": { "method": "GET", "url": "/inventory/SKU-9" },
             "response": {
               "status": 200,
               "headers": { "Content-Type": "application/json" },
-              "jsonBody": { "orderId": 123, "status": "CONFIRMED", "total": 42.0 }
+              "jsonBody": { "sku": "SKU-9", "qty": 5 }
             }
-          }' > mappings/order.json
+          }' > mappings/get_inventory.json
+
+          # POST Create Order Stub
+          echo '{
+            "request": {
+              "method": "POST",
+              "url": "/orders/",
+              "headers": { "Content-Type": { "matches": "application/json(;.*)?" } }
+            },
+            "response": {
+              "status": 201,
+              "headers": { "Content-Type": "application/json" },
+              "jsonBody": { "statusCode": 201, "orderId": 101, "status": "CREATED", "total": 2000 }
+            }
+          }' > mappings/create_order.json
 
           docker run -d --name mock-provider -p 4010:8080 \
             -v $(pwd)/mappings:/home/wiremock/mappings \
             wiremock/wiremock:3.3.1
-
-          echo "Waiting for Mock Provider..."
-          for i in {1..10}; do
-            if curl -sf http://127.0.0.1:4010/__admin/ >/dev/null; then
-              echo "Mock Provider is ready!"; exit 0
-            fi
-            sleep 2
-          done
-          exit 1
 
       - name: 5. Run Pact Provider Verification + Publish Results
         working-directory: citesting
