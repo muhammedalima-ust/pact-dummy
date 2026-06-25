@@ -19,31 +19,28 @@ jobs:
           java-version: '22'
           cache: maven
 
-      - name: 1. Run Pact Consumer Tests
+      - name: 1. Start Pact Broker
+        working-directory: citesting
+        run: |
+          docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d --wait
+          echo "Broker is healthy and ready at http://localhost:9292"
+
+      - name: 2. Run Pact Consumer Tests
         working-directory: citesting
         run: mvn -Dtest=PosOmsConsumerPactTest test
+        # Generates → citesting/target/pacts/POS-OMS.json
 
-      - name: 2. Start Pact Broker
+      - name: 3. Publish Pact to Broker
         working-directory: citesting
         run: |
-          docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d
-          for i in {1..30}; do
-            if curl -sf http://127.0.0.1:9292/diagnostic/status/heartbeat >/dev/null; then
-              echo "Pact Broker is ready"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "=== Printing Broker Container Logs ==="
-          docker compose -f src/test/resources/docker-compose.pact-broker.yml logs broker
-          exit 1
+          mvn pact:publish \
+            -Dpact.broker.url=http://localhost:9292 \
+            -Dpact.consumer.version=1.0.0-ci
 
-      - name: 3. Start a Temporary Mock Provider (WireMock)
+      - name: 4. Start Mock Provider (WireMock)
         run: |
-          # Create a directory for mappings
           mkdir -p mappings
-          
-          # Create the exact endpoint the Pact file will look for
+
           echo '{
             "request": {
               "method": "GET",
@@ -62,10 +59,10 @@ jobs:
             }
           }' > mappings/order.json
 
-          # Spin up WireMock container in the background matching the port Pact expects (4010)
-          docker run -d --name mock-provider -p 4010:8080 -v $(pwd)/mappings:/home/wiremock/mappings wiremock/wiremock:3.3.1
-          
-          # Wait until the mock server responds
+          docker run -d --name mock-provider -p 4010:8080 \
+            -v $(pwd)/mappings:/home/wiremock/mappings \
+            wiremock/wiremock:3.3.1
+
           echo "Waiting for Mock Provider..."
           for i in {1..10}; do
             if curl -sf http://127.0.0.1:4010/__admin/ >/dev/null; then
@@ -76,6 +73,6 @@ jobs:
           done
           exit 1
 
-      - name: 4. Run Pact Provider Verification
+      - name: 5. Run Pact Provider Verification
         working-directory: citesting
         run: mvn -Dtest=OmsProviderVerification test
