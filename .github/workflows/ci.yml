@@ -41,6 +41,19 @@ jobs:
         run: |
           mkdir -p mappings
           
+          # 1. State: "Order 123 exists"
+          # Maps to GET /order/123
+          echo '{
+            "request": { "method": "GET", "url": "/order/123" },
+            "response": {
+              "status": 200,
+              "headers": { "Content-Type": "application/json" },
+              "jsonBody": { "orderId": 123, "status": "CONFIRMED", "total": 42.0 }
+            }
+          }' > mappings/state_order_exists.json
+
+          # 2. State: "SKU-9 has Stock"
+          # Maps to GET /inventory/SKU-9
           echo '{
             "request": { "method": "GET", "url": "/inventory/SKU-9" },
             "response": {
@@ -48,8 +61,10 @@ jobs:
               "headers": { "Content-Type": "application/json" },
               "jsonBody": { "sku": "SKU-9", "qty": 5 }
             }
-          }' > mappings/get_inventory.json
+          }' > mappings/state_sku_stock.json
 
+          # 3. State: "Creating a new order"
+          # Maps to POST /orders/
           echo '{
             "request": {
               "method": "POST",
@@ -61,7 +76,7 @@ jobs:
               "headers": { "Content-Type": "application/json" },
               "jsonBody": { "statusCode": 201, "orderId": 101, "status": "CREATED", "total": 2000 }
             }
-          }' > mappings/create_order.json
+          }' > mappings/state_create_order.json
 
           docker run -d --name mock-provider -p 4010:8080 \
             -v $(pwd)/mappings:/home/wiremock/mappings \
