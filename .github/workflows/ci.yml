@@ -23,7 +23,7 @@ jobs:
         working-directory: citesting
         run: mvn -Dtest=PosOmsConsumerPactTest test
 
-      - name: Start Pact Broker
+      - name: 2. Start Pact Broker
         working-directory: citesting
         run: |
           docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d
