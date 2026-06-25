@@ -38,12 +38,20 @@ jobs:
       # Runs against a fresh broker each CI run, so no conflict.
       - name: 2. Create Production Environment
         run: |
-          pact-broker create-environment \
+          OUTPUT=$(pact-broker create-environment \
             --name production \
             --display-name Production \
             --production \
-            --broker-base-url http://localhost:9292
+            --broker-base-url http://localhost:9292 2>&1)
+          EXIT=$?
+          echo "$OUTPUT"
+          if [ $EXIT -ne 0 ]; then
+            echo "$OUTPUT" | grep -q "already used" \
+              && echo "::notice::Environment already exists — skipping." \
+              || exit $EXIT
+          fi
 
+          
       - name: 3. Run Pact Consumer Tests
         working-directory: citesting
         run: mvn -Dtest=PosOmsConsumerPactTest test
