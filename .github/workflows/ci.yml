@@ -38,25 +38,42 @@ jobs:
           docker compose -f src/test/resources/docker-compose.pact-broker.yml logs broker
           exit 1
 
-      - name: 3. Start OMS Provider Application
-        working-directory: citesting
+      - name: 3. Start a Temporary Mock Provider (WireMock)
         run: |
-          # 1. Compile the project classes
-          mvn compile
-
-          # 2. Fire up the application using the Exec Maven Plugin in the background
-          # IMPORTANT: Replace 'com.citesting.OmsApplication' with your actual main class path!
-          mvn exec:java -Dexec.mainClass="com.citesting.OmsApplication" & 
+          # Create a directory for mappings
+          mkdir -p mappings
           
-          echo "Waiting for OMS Provider to start on port 4010..."
-          for i in {1..20}; do
-            if curl -sf http://127.0.0.1:4010/health >/dev/null || curl -sf http://127.0.0.1:4010/ >/dev/null; then
-              echo "OMS Provider is up!"
+          # Create the exact endpoint the Pact file will look for
+          echo '{
+            "request": {
+              "method": "GET",
+              "url": "/order/123"
+            },
+            "response": {
+              "status": 200,
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "jsonBody": {
+                "id": 123,
+                "status": "CONFIRMED",
+                "total": 42.0
+              }
+            }
+          }' > mappings/order.json
+
+          # Spin up WireMock container in the background matching the port Pact expects (4010)
+          docker run -d --name mock-provider -p 4010:8080 -v $(pwd)/mappings:/home/wiremock/mappings wiremock/wiremock:3.3.1
+          
+          # Wait until the mock server responds
+          echo "Waiting for Mock Provider..."
+          for i in {1..10}; do
+            if curl -sf http://127.0.0.1:4010/__admin/ >/dev/null; then
+              echo "Mock Provider is ready!"
               exit 0
             fi
-            sleep 3
+            sleep 2
           done
-          echo "OMS Provider failed to start"
           exit 1
 
       - name: 4. Run Pact Provider Verification
