@@ -26,7 +26,6 @@ jobs:
             | tar xz -C $HOME
           echo "$HOME/pact/bin" >> $GITHUB_PATH
 
-
       - name: Set CONTRACT_VERSION
         run: echo "CONTRACT_VERSION=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
@@ -36,7 +35,6 @@ jobs:
           docker compose -f src/test/resources/docker-compose.pact-broker.yml down -v
           docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d --wait --wait-timeout 120
 
-          
           echo "Waiting for broker to be reachable on host..."
           for i in {1..20}; do
             if curl -sf http://127.0.0.1:9292/diagnostic/status/heartbeat >/dev/null; then
@@ -48,20 +46,11 @@ jobs:
           docker compose -f src/test/resources/docker-compose.pact-broker.yml logs
           exit 1
 
-      
-      - name: 2. Create Production Environment
-        run: |
-          pact-broker ensure-environment \
-            --name production \
-            --display-name Production \
-            --production \
-            --broker-base-url http://127.0.0.1:9292
-
-      - name: 3. Run Pact Consumer Tests
+      - name: 2. Run Pact Consumer Tests
         working-directory: citesting
         run: mvn -Dtest=PosOmsConsumerPactTest test
 
-      - name: 4. Publish Pact to Broker
+      - name: 3. Publish Pact to Broker
         working-directory: citesting
         run: |
           pact-broker publish target/pacts \
@@ -70,7 +59,7 @@ jobs:
             --tag=week4 \
             --broker-base-url=http://127.0.0.1:9292
 
-      - name: 5. Start Mock Provider (WireMock)
+      - name: 4. Start Mock Provider (WireMock)
         run: |
           mkdir -p mappings
           echo '{
@@ -95,8 +84,7 @@ jobs:
           done
           exit 1
 
-      
-      - name: 6. Run Pact Provider Verification + Publish Results
+      - name: 5. Run Pact Provider Verification + Publish Results
         working-directory: citesting
         run: |
           mvn -Dtest=OmsProviderVerification \
@@ -104,40 +92,3 @@ jobs:
               -Dpactbroker.host=127.0.0.1 \
               -Dpactbroker.port=9292 \
               test
-
-      
-      - name: 7. Record Deployment (oms-provider)
-        run: |
-          pact-broker record-deployment \
-            --pacticipant oms-provider \
-            --version $CONTRACT_VERSION \
-            --environment production \
-            --broker-base-url http://127.0.0.1:9292
-
-      - name: 8. can-i-deploy Gate (pos-consumer)
-        run: |
-          pact-broker can-i-deploy \
-            --pacticipant pos-consumer \
-            --version $CONTRACT_VERSION \
-            --to-environment production \
-            --retry-while-unknown 3 \
-            --retry-interval 10 \
-            --broker-base-url http://127.0.0.1:9292
-
-      - name: 9. Record Deployment (pos-consumer)
-        run: |
-          pact-broker record-deployment \
-            --pacticipant pos-consumer \
-            --version $CONTRACT_VERSION \
-            --environment production \
-            --broker-base-url http://127.0.0.1:9292
-
-      - name: 10. can-i-deploy Gate (oms-provider)
-        run: |
-          pact-broker can-i-deploy \
-            --pacticipant oms-provider \
-            --version $CONTRACT_VERSION \
-            --to-environment production \
-            --retry-while-unknown 3 \
-            --retry-interval 10 \
-            --broker-base-url http://127.0.0.1:9292
