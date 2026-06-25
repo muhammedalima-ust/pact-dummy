@@ -29,7 +29,7 @@ jobs:
       - name: 1. Start Pact Broker
         working-directory: citesting
         run: |
-          docker compose -f pact-tests/docker-compose.pact-broker.yml down -v
+          docker compose -f src/test/resources/docker-compose.pact-broker.yml down -v
           docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d --wait --wait-timeout 120
           echo "Broker is healthy and ready at http://localhost:9292"
 
