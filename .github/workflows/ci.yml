@@ -19,20 +19,6 @@ jobs:
           java-version: '22'
           cache: maven
 
-      - name: Start Pact Broker
-        working-directory: citesting
-        run: |
-          docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d
-          for i in {1..30}; do
-            if curl -sf http://localhost:9292/diagnostic/status/heartbeat >/dev/null; then
-              echo "Pact Broker is ready"
-              exit 0
-            fi
-            sleep 5
-          done
-          docker compose -f src/test/resources/docker-compose.pact-broker.yml ps
-          exit 1
-
       - name: 1. Run Pact Consumer Tests
         working-directory: citesting
         run: mvn -Dtest=PosOmsConsumerPactTest test
@@ -41,7 +27,23 @@ jobs:
         working-directory: citesting
         run: mvn pact:publish
 
-      - name: 3. Run Pact Provider Verification
+      - name: 3. Start OMS Provider Application
         working-directory: citesting
-        # This triggers only the provider verification class
+        # Compiles and starts your Spring Boot / Java app in the background
+        # Adjust this command if your app is started differently (e.g., java -jar)
+        run: |
+          mvn spring-boot:start & 
+          echo "Waiting for OMS Provider to start on port 4010..."
+          for i in {1..20}; do
+            if curl -sf http://localhost:4010/health >/dev/null || curl -sf http://localhost:4010/ >/dev/null; then
+              echo "OMS Provider is up!"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "OMS Provider failed to start"
+          exit 1
+
+      - name: 4. Run Pact Provider Verification
+        working-directory: citesting
         run: mvn -Dtest=OmsProviderVerification test
