@@ -32,39 +32,15 @@ jobs:
           docker compose -f src/test/resources/docker-compose.pact-broker.yml down -v
           docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d --wait --wait-timeout 120
 
-          # Use 127.0.0.1 explicitly — localhost can resolve to ::1 (IPv6)
-          # on GitHub runners, but Docker only binds on IPv4 (0.0.0.0)
-          echo "Waiting for broker to be reachable on host..."
-          for i in {1..20}; do
-            if curl -sf http://127.0.0.1:9292/diagnostic/status/heartbeat >/dev/null; then
-              echo "Broker is reachable at http://127.0.0.1:9292"
-              exit 0
-            fi
-            echo "Attempt $i/20 — retrying in 3s..."
-            sleep 3
-          done
-          echo "Broker failed to become reachable after 60s"
-          docker compose -f pact-tests/docker-compose.pact-broker.yml logs
-          exit 1
-
+          
       - name: 2. Create Production Environment
         run: |
-          set +e
-          OUTPUT=$(pact-broker create-environment \
-            --name production \
-            --display-name Production \
-            --production \
-            --broker-base-url http://127.0.0.1:9292 2>&1)
-          EXIT=$?
-          set -e
-
-          echo "$OUTPUT"
-
-          if [ $EXIT -ne 0 ]; then
-            echo "$OUTPUT" | grep -q "already used" \
-              && echo "::notice::Environment already exists — skipping." \
-              || exit $EXIT
-          fi
+          pact-broker can-i-deploy \
+            --pacticipant pos-consumer \
+            --version $CONTRACT_VERSION \
+            --to-environment production \
+            --broker-base-url http://127.0.0.1:9292
+  
 
       - name: 3. Run Pact Consumer Tests
         working-directory: citesting
