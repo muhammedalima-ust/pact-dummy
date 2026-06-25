@@ -20,7 +20,6 @@ jobs:
           cache: maven
 
       - name: Start Pact Broker
-        # This tells GitHub to run the command inside the 'citesting' folder
         working-directory: citesting
         run: |
           docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d
@@ -34,7 +33,15 @@ jobs:
           docker compose -f src/test/resources/docker-compose.pact-broker.yml ps
           exit 1
 
-      - name: Run Pact tests
-        # This ensures Maven finds your pom.xml inside 'citesting'
+      - name: 1. Run Pact Consumer Tests
         working-directory: citesting
         run: mvn -Dtest=PosOmsConsumerPactTest test
+
+      - name: 2. Publish Pact to Broker
+        working-directory: citesting
+        run: mvn pact:publish
+
+      - name: 3. Run Pact Provider Verification
+        working-directory: citesting
+        # This triggers only the provider verification class
+        run: mvn -Dtest=OmsProviderVerification test

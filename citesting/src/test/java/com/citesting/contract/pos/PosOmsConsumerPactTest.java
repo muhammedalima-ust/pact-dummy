@@ -22,9 +22,7 @@ import static io.restassured.RestAssured.given;
 class PosOmsConsumerPactTest {
  
     @Pact(provider = "oms-provider", consumer = "pos-consumer")
-
     V4Pact getOrder(PactDslWithProvider builder) {
-
         return builder
                 .given("Order 123 exists")
                 .uponReceiving("a request for order 123")
@@ -42,9 +40,7 @@ class PosOmsConsumerPactTest {
  
  
     @Test
-
     @PactTestFor(pactMethod = "getOrder")
-
     void testGetOrder(MockServer mockServer) {
  
         Response response =
@@ -55,5 +51,7 @@ class PosOmsConsumerPactTest {
         response.then().statusCode(200).log().all();
  
     }
+
+
 
 }
