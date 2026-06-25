@@ -174,12 +174,9 @@
                 <version>3.5.6</version>
                 <configuration>
                     <systemPropertyVariables>
-                        <pact.verifier.publishResults>true
-                        </pact.verifier.publishResults>
-                        <pact.provider.version>${git.sha}
-                        </pact.provider.version>
-                        <pact.provider.branch>main
-                        </pact.provider.branch>
+                        <pact.verifier.publishResults>true</pact.verifier.publishResults>
+                        <pact.provider.version>${git.sha}</pact.provider.version>
+                        <pact.provider.branch>main</pact.provider.branch>
                     </systemPropertyVariables>
                 </configuration>
                 </plugin>
