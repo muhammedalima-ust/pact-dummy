@@ -1,5 +1,6 @@
 package com.citesting.contract.pos;
  
+import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeEach;
  
@@ -9,39 +10,53 @@ import static io.restassured.RestAssured.given;
  
 final class OmsClient {
  
- 
+    
     private String baseUrl;
     private HttpClient client;
  
-    private static final String BASE_URL = System.getProperty(
-            "baseUrl",
-            System.getenv().getOrDefault("BASE_URL", "http://localhost:4010/")
-    );
-
-    @BeforeEach
-    void setup() {
-        this.baseUrl = BASE_URL;
-        this.client = HttpClient.newHttpClient();
+    public OmsClient(String baseUrl){
+        this.baseUrl=baseUrl;
     }
+
+    // @BeforeEach
+    // void setup() {
+    //     this.client = HttpClient.newHttpClient();
+    // }
  
     public Order getOrder(int id) {
         
-        Response response = given()
+         return  given()
                 .baseUri(baseUrl)
-                .basePath("/orders/" + id)
-                .get();
-        response.then().statusCode(200);
-
-        int orderId = response.then().extract().path("id");
-        String status = response.then().extract().path("status");
-        double total = response.then().extract().path("total");
-
-        return new Order(response.statusCode(),orderId,status,total);
+                .contentType(ContentType.JSON)
+                .get("/order/" + id)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(Order.class);
+    }
+     public Order createOrder(Order order) {
+         return  given()
+                .baseUri(baseUrl)
+                .contentType(ContentType.JSON)
+                .body(order)
+                .post("/orders/")
+                .then()
+                .statusCode(201)
+                .extract()
+                .as(Order.class);
     }
 
-    
+    public Response getInventory() {
+         return  given()
+                .baseUri(baseUrl)
+                .get("/inventory/SKU-9")
+                .then()
+                .statusCode(200)
+                .extract()
+                .response();
+    }
  
-    record Order(int statuscode,int orderId,String status,double total){}
+    public static record Order(int statusCode,int orderId,String status,double total){}
  
  
 }

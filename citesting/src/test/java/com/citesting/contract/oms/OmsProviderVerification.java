@@ -38,4 +38,10 @@ public class OmsProviderVerification {
     @State("Order 123 exists")
     void isOrderExists(){
     }
+    // @State("Creating a new order")
+    // void createOrder(){
+    // }
+    // @State("SKU-9 has Stock")
+    // void getInventory(){
+    // }
 }
