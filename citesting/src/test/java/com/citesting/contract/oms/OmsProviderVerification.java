@@ -15,7 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
  
  
 @Provider("oms-provider")
-@PactBroker(url = "http://localhost:9292")
+@PactBroker(url = "http://localhost:9292",
+            enablePendingPacts = "true",
+            providerTags = "main",
+            includeWipPactsSince = "2026-06-26")
 public class OmsProviderVerification {
  
     @PactBrokerConsumerVersionSelectors
