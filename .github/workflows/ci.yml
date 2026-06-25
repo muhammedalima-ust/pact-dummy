@@ -19,47 +19,46 @@ jobs:
           java-version: '22'
           cache: maven
 
-      # Needed for: pact-broker publish, can-i-deploy,
-      # create-environment, record-deployment
       - name: Install Pact CLI
         run: |
-          curl -fsSL https://raw.githubusercontent.com/pact-foundation/pact-ruby-standalone/master/install.sh | bash
-          echo "$HOME/.pact/bin" >> $GITHUB_PATH
+          curl -fsSL \
+            https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v2.4.5/pact-2.4.5-linux-x86_64.tar.gz \
+            | tar xz -C $HOME
+          echo "$HOME/pact/bin" >> $GITHUB_PATH
 
+      
       - name: 1. Start Pact Broker
         working-directory: citesting
         run: |
-          docker compose -f src/test/resources/docker-compose.pact-broker.yml down -v
           docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d --wait --wait-timeout 120
+          docker compose -f src/test/resources/docker-compose.pact-broker.yml down -v
           echo "Broker is healthy and ready at http://localhost:9292"
 
-      # Creates the 'production' environment model in the broker.
-      # Must exist before can-i-deploy and record-deployment can reference it.
-      # Runs against a fresh broker each CI run, so no conflict.
+      # set +e prevents bash -e from killing the script on the subshell assignment.
+      # set -e re-enables it so everything after still exits on real errors.
       - name: 2. Create Production Environment
         run: |
+          set +e
           OUTPUT=$(pact-broker create-environment \
             --name production \
             --display-name Production \
             --production \
             --broker-base-url http://localhost:9292 2>&1)
           EXIT=$?
+          set -e
+
           echo "$OUTPUT"
+
           if [ $EXIT -ne 0 ]; then
             echo "$OUTPUT" | grep -q "already used" \
               && echo "::notice::Environment already exists — skipping." \
               || exit $EXIT
           fi
 
-          
       - name: 3. Run Pact Consumer Tests
         working-directory: citesting
         run: mvn -Dtest=PosOmsConsumerPactTest test
-        # Generates → citesting/target/pacts/POS-OMS.json
 
-      # Fixed: removed the duplicate '$ pact-broker' literal that was in the run block.
-      # --consumer-app-version ties the pact to a git SHA so the broker Matrix works.
-      # --branch=main feeds mainBranch() selector in OmsProviderVerification.
       - name: 4. Publish Pact to Broker
         working-directory: citesting
         run: |
@@ -94,21 +93,12 @@ jobs:
           done
           exit 1
 
-      # -Dgit.sha is expanded by Surefire's <systemPropertyVariables> in pom.xml into:
-      #   pact.verifier.publishResults=true
-      #   pact.provider.version=$CONTRACT_VERSION
-      #   pact.provider.branch=main
-      # Raw -D flags on the mvn line won't reach the forked test JVM — Surefire must own them.
       - name: 6. Run Pact Provider Verification + Publish Results
         working-directory: citesting
         run: |
           export CONTRACT_VERSION=$(git rev-parse --short HEAD)
           mvn -Dtest=OmsProviderVerification -Dgit.sha=$CONTRACT_VERSION test
 
-      # GATE — runs BEFORE any deploy, not after.
-      # Checks the broker Matrix: is this consumer SHA compatible with what's live in production?
-      # --retry-while-unknown waits for an in-flight verification to finish before deciding.
-      # Non-zero exit code stops the pipeline here; nothing deploys.
       - name: 7. can-i-deploy Gate (pos-consumer)
         run: |
           pact-broker can-i-deploy \
@@ -129,9 +119,6 @@ jobs:
             --retry-interval 10 \
             --broker-base-url http://localhost:9292
 
-      # record-deployment runs AFTER the gate passes.
-      # It states a fact ("this version is now live"), it is not itself a gate.
-      # This is what makes deployedOrReleased() selector work in future verification runs.
       - name: 9. Record Deployment (pos-consumer)
         run: |
           pact-broker record-deployment \
