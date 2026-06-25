@@ -41,11 +41,12 @@ jobs:
       - name: 3. Start OMS Provider Application
         working-directory: citesting
         run: |
-          # 1. Build the fat JAR file (skipping tests since we already ran them)
-          mvn clean package -DskipTests
+          # 1. Compile the project classes
+          mvn compile
 
-          # 2. Start the jar in the background (Adjust target/*.jar name if needed)
-          java -jar target/*.jar & 
+          # 2. Fire up the application using the Exec Maven Plugin in the background
+          # IMPORTANT: Replace 'com.citesting.OmsApplication' with your actual main class path!
+          mvn exec:java -Dexec.mainClass="com.citesting.OmsApplication" & 
           
           echo "Waiting for OMS Provider to start on port 4010..."
           for i in {1..20}; do
