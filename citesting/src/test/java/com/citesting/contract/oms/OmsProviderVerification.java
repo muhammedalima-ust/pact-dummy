@@ -6,24 +6,22 @@ import au.com.dius.pact.provider.junit5.PactVerificationInvocationContextProvide
 import au.com.dius.pact.provider.junitsupport.Provider;
 import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.loader.PactBroker;
-import au.com.dius.pact.provider.junitsupport.loader.VersionSelector;
+import au.com.dius.pact.provider.junitsupport.loader.PactBrokerConsumerVersionSelectors;
+import au.com.dius.pact.provider.junitsupport.loader.SelectorBuilder;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
  
  
-
-@SuppressWarnings("deprecation")
 @Provider("oms-provider")
-@PactBroker(
-    url = "http://localhost:9292",
-    consumerVersionSelectors = {
-        @VersionSelector(tag = "week4") // matches your maven publish tag
-    }
-)
+@PactBroker(url = "http://localhost:9292")
 public class OmsProviderVerification {
  
+    @PactBrokerConsumerVersionSelectors
+    public static SelectorBuilder consumerVersionSelectors() {
+        return new SelectorBuilder().latestTag("week4");
+    }
  
     @SuppressWarnings("JUnitMalformedDeclaration")
     @BeforeEach
