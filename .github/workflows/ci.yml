@@ -40,13 +40,16 @@ jobs:
 
       - name: 3. Start OMS Provider Application
         working-directory: citesting
-        # Compiles and starts your Spring Boot / Java app in the background
-        # Adjust this command if your app is started differently (e.g., java -jar)
         run: |
-          mvn spring-boot:start & 
+          # 1. Build the fat JAR file (skipping tests since we already ran them)
+          mvn clean package -DskipTests
+
+          # 2. Start the jar in the background (Adjust target/*.jar name if needed)
+          java -jar target/*.jar & 
+          
           echo "Waiting for OMS Provider to start on port 4010..."
           for i in {1..20}; do
-            if curl -sf http://localhost:4010/health >/dev/null || curl -sf http://localhost:4010/ >/dev/null; then
+            if curl -sf http://127.0.0.1:4010/health >/dev/null || curl -sf http://127.0.0.1:4010/ >/dev/null; then
               echo "OMS Provider is up!"
               exit 0
             fi
