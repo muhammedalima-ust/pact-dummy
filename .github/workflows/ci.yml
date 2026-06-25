@@ -23,9 +23,20 @@ jobs:
         working-directory: citesting
         run: mvn -Dtest=PosOmsConsumerPactTest test
 
-      - name: 2. Publish Pact to Broker
+      - name: Start Pact Broker
         working-directory: citesting
-        run: mvn pact:publish
+        run: |
+          docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d
+          for i in {1..30}; do
+            if curl -sf http://127.0.0.1:9292/diagnostic/status/heartbeat >/dev/null; then
+              echo "Pact Broker is ready"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "=== Printing Broker Container Logs ==="
+          docker compose -f src/test/resources/docker-compose.pact-broker.yml logs broker
+          exit 1
 
       - name: 3. Start OMS Provider Application
         working-directory: citesting
