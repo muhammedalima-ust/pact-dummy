@@ -23,7 +23,7 @@ public class OmsProviderVerification {
  
     @PactBrokerConsumerVersionSelectors
     public static SelectorBuilder consumerVersionSelectors() {
-        return new SelectorBuilder().latestTag("week4");
+        return new SelectorBuilder();
     }
  
     @SuppressWarnings("JUnitMalformedDeclaration")
