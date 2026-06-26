@@ -17,10 +17,10 @@ jobs:
           java-version: '22'
           cache: 'maven'
 
-      - name: Install Pact CLI
-        run: |
-          curl -fsSL https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v2.4.5/pact-2.4.5-linux-x86_64.tar.gz | tar xz -C $HOME
-          echo "$HOME/pact/bin" >> $GITHUB_PATH
+      # - name: Install Pact CLI
+      #   run: |
+      #     curl -fsSL https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v2.4.5/pact-2.4.5-linux-x86_64.tar.gz | tar xz -C $HOME
+      #     echo "$HOME/pact/bin" >> $GITHUB_PATH
 
       - name: Start Pact Broker
         working-directory: citesting
@@ -36,7 +36,7 @@ jobs:
             --consumer-app-version=${{ github.sha }} \
             --branch=main \
             --broker-base-url=http://127.0.0.1:9292
-            
+
 
       - name: Run Provider Verification
         working-directory: citesting
