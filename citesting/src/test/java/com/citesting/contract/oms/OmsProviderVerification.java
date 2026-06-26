@@ -60,7 +60,7 @@ public class OmsProviderVerification {
     }
 
 
-    @State("Order 123 exists")
+    @State("Order 245 exists")
     void isOrderExists() {
         wireMock.stubFor(get(urlEqualTo("/order/123"))
             .willReturn(aResponse()

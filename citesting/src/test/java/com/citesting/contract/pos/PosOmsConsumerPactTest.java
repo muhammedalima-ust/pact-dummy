@@ -32,7 +32,7 @@ class PosOmsConsumerPactTest {
     @Pact(provider = "oms-provider", consumer = "pos-consumer")
     V4Pact getOrder(PactDslWithProvider builder) {
         return builder
-                .given("Order 123 exists")
+                .given("Order 245 exists")
                 .uponReceiving("a request for order 123")
                 .path("/order/123")
                 .method("GET")
