@@ -9,42 +9,88 @@ import au.com.dius.pact.provider.junitsupport.loader.PactBroker;
 import au.com.dius.pact.provider.junitsupport.loader.PactBrokerConsumerVersionSelectors;
 import au.com.dius.pact.provider.junitsupport.loader.SelectorBuilder;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
- 
- 
+
 @Provider("oms-provider")
-@PactBroker(url = "http://127.0.0.1:9292",
-            enablePendingPacts = "true",
-            providerTags = "main",
-            includeWipPactsSince = "2026-06-26")
+@PactBroker(
+    url = "http://127.0.0.1:9292",
+    enablePendingPacts = "true",
+    providerTags = "main",
+    includeWipPactsSince = "2026-06-26"
+)
 public class OmsProviderVerification {
- 
+
+    private static final WireMockServer wireMock =
+        new WireMockServer(WireMockConfiguration.options().port(4010));
+
+    @BeforeAll
+    static void startWireMock() {
+        wireMock.start();
+    }
+
+    @AfterAll
+    static void stopWireMock() {
+        wireMock.stop();
+    }
+
+
     @PactBrokerConsumerVersionSelectors
     public static SelectorBuilder consumerVersionSelectors() {
         return new SelectorBuilder();
     }
- 
-    @SuppressWarnings("JUnitMalformedDeclaration")
+
     @BeforeEach
-    void setup(PactVerificationContext context){
-        context.setTarget(new HttpTestTarget("127.0.0.1", 4010, "/"));
+    void setup(PactVerificationContext context) {
+        wireMock.resetAll();                                        
+        context.setTarget(new HttpTestTarget("127.0.0.1", 4010));
     }
 
     @TestTemplate
     @ExtendWith(PactVerificationInvocationContextProvider.class)
-    void verify(PactVerificationContext context){
+    void verify(PactVerificationContext context) {
         context.verifyInteraction();
     }
 
+
     @State("Order 123 exists")
-    void isOrderExists(){
+    void isOrderExists() {
+        wireMock.stubFor(get(urlEqualTo("/order/123"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("""
+                    {"orderId": 123, "status": "CONFIRMED", "total": 42.0}
+                """)));
     }
+
     @State("Creating a new order")
-    void createOrder(){
+    void createOrder() {
+        wireMock.stubFor(post(urlEqualTo("/orders/"))
+            .withHeader("Content-Type", matching("application/json(;.*)?"))
+            .willReturn(aResponse()
+                .withStatus(201)
+                .withHeader("Content-Type", "application/json")
+                .withBody("""
+                    {"statusCode": 201, "orderId": 101, "status": "CREATED", "total": 2000}
+                """)));
     }
+
     @State("SKU-9 has Stock")
-    void getInventory(){
+    void getInventory() {
+        wireMock.stubFor(get(urlEqualTo("/inventory/SKU-9"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("""
+                    {"sku": "SKU-9", "qty": 5}
+                """)));
     }
 }
