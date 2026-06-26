@@ -54,8 +54,7 @@ public class OmsProviderVerification {
     }
 
     @BeforeEach
-    void setup(PactVerificationContext context) {
-        wireMock.resetAll();                                        
+    void setup(PactVerificationContext context) {                                     
         context.setTarget(new HttpTestTarget("127.0.0.1", 4010));
     }
 
