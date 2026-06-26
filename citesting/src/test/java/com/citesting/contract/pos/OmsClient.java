@@ -12,16 +12,10 @@ final class OmsClient {
  
     
     private String baseUrl;
-    private HttpClient client;
  
     public OmsClient(String baseUrl){
         this.baseUrl=baseUrl;
     }
-
-    // @BeforeEach
-    // void setup() {
-    //     this.client = HttpClient.newHttpClient();
-    // }
  
     public Order getOrder(int id) {
         
