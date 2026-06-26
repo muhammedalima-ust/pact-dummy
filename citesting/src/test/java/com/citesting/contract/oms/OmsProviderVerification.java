@@ -26,10 +26,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 @Provider("oms-provider")
 @PactBroker(
-    url = "http://127.0.0.1:9292",
-    enablePendingPacts = "true",
-    providerTags = "main",
-    includeWipPactsSince = "2026-06-26"
+    url = "http://127.0.0.1:9292"
 )
 public class OmsProviderVerification {
     @RegisterExtension
