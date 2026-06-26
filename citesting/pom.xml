@@ -188,6 +188,7 @@
                 <configuration>
                     <pactDirectory>${project.build.directory}/pacts</pactDirectory>
                     <pactBrokerUrl>${pact.broker.url}</pactBrokerUrl>
+                    <CONTRACT_VERSION>${git.sha}</CONTRACT_VERSION>
                     <projectVersion>${pact.publish.consumer.version}</projectVersion>
                     <branchName>${pact.publish.consumer.branchName}</branchName>
                     <tags><tag>week4</tag></tags>
