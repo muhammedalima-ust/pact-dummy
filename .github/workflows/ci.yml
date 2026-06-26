@@ -46,3 +46,8 @@ jobs:
               -Dpactbroker.host=127.0.0.1 \
               -Dpactbroker.port=9292 \
               test
+
+      # - name: Can i deploy
+      #   working-directory: citesting
+      #   run: |
+      #     mvn 

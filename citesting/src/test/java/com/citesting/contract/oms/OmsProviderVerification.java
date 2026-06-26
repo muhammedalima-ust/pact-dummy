@@ -40,9 +40,13 @@ public class OmsProviderVerification {
 
 
     @PactBrokerConsumerVersionSelectors
-    public static SelectorBuilder consumerVersionSelectors() {
-        return new SelectorBuilder();
+    public static SelectorBuilder
+            consumerVersionSelectors() {
+        return new SelectorBuilder()
+                    .mainBranch()
+                    .deployedOrReleased();
     }
+
 
     @BeforeEach
     void setup(PactVerificationContext context) {                                     
