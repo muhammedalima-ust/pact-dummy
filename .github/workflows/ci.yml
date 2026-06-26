@@ -50,6 +50,15 @@ jobs:
               -Dpactbroker.port=9292 \
               test
 
+      - name: 4b. Record provider deployment to production
+        working-directory: citesting
+        run: |
+          pact-broker record-deployment \
+            --pacticipant oms-provider \
+            --version ${{ github.sha }} \
+            --environment production \
+            --broker-base-url http://127.0.0.1:9292
+
       - name: 5. Can I deploy
         working-directory: citesting
         env:
