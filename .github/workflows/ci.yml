@@ -35,6 +35,8 @@ jobs:
       
       - name: Consumer Publish Contracts to teh Borker
         working-directory: citesting
+        env:
+            CONTRACT_VERSION: ${{ github.sha }} 
         run: |
           pact-broker publish target/pacts \
             --consumer-app-version=${{ github.sha }} \
