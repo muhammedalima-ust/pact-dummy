@@ -6,6 +6,7 @@ import au.com.dius.pact.provider.junit5.PactVerificationInvocationContextProvide
 import au.com.dius.pact.provider.junitsupport.Provider;
 import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.loader.PactBroker;
+import au.com.dius.pact.provider.junitsupport.loader.PactBrokerAuth;
 import au.com.dius.pact.provider.junitsupport.loader.PactBrokerConsumerVersionSelectors;
 import au.com.dius.pact.provider.junitsupport.loader.SelectorBuilder;
 
@@ -22,7 +23,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 @Provider("oms-provider")
 @PactBroker(
-    url = "http://127.0.0.1:9292"
+ 
+        url = "${pact.broker.url}",
+        authentication = @PactBrokerAuth(token = "${pact.broker.token}")
+ 
 )
 public class OmsProviderVerification {
     @RegisterExtension
