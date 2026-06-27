@@ -29,7 +29,7 @@ jobs:
       - name: Start Pact Broker
         working-directory: citesting
         run: |
-          docker compose -f docker-compose.pact-broker.yml up -d
+          docker compose -f src/test/resources/docker-compose.pact-broker.yml up -d
 
       - name: Wait for Broker
         working-directory: citesting
