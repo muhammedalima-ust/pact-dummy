@@ -32,8 +32,8 @@ public class OmsProviderVerification {
         WireMockExtension.newInstance()
             .options(wireMockConfig().port(4010))
             .build();
-
-
+ 
+ 
     @PactBrokerConsumerVersionSelectors
     public static SelectorBuilder
             consumerVersionSelectors() {
@@ -41,13 +41,13 @@ public class OmsProviderVerification {
                     .mainBranch()
                     .deployedOrReleased();
     }
-
-
+ 
+ 
     @BeforeEach
-    void setup(PactVerificationContext context) {                                     
+    void setup(PactVerificationContext context) {                                    
         context.setTarget(new HttpTestTarget("127.0.0.1", 4010));
     }
-
+ 
     @TestTemplate
     @ExtendWith(PactVerificationInvocationContextProvider.class)
     void verify(PactVerificationContext context) {

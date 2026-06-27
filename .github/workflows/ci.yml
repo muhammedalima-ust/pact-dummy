@@ -44,7 +44,7 @@ jobs:
           mvn -Dtest=OmsProviderVerification \
               -Dgit.sha=${{ github.sha }} \
               -Dpact.broker.url=${{secrets.PACT_URL}} \
-              -Dpact.broker.token=-${{ secrets.PACT_TOKEN}} \
+              -Dpact.broker.token=-${{secrets.PACT_TOKEN}} \
               test
 
       - name: 5. Record provider deployment to production
@@ -55,7 +55,7 @@ jobs:
             --version ${{ github.sha }} \
             --environment production \
             --broker-base-url=${{secrets.PACT_URL}} \
-            --broker-token=${{ secrets.PACT_TOKEN}}
+            --broker-token=${{secrets.PACT_TOKEN}}
 
       - name: 6. Can I deploy
         working-directory: citesting
