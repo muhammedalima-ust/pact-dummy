@@ -18,8 +18,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <wiremock.version>3.13.2</wiremock.version>
         <pact.version>4.6.20</pact.version>
-        <pact.broker.url>{ secrets.PACT_URL}</pact.broker.url>
-        <pact.broker.token>{secrets.PACT_TOKEN}</pact.broker.token>
+        <!-- <pact.broker.url>${secrets.PACT_URL}</pact.broker.url>
+        <pact.broker.token>${secrets.PACT_TOKEN}</pact.broker.token> -->
         <pact.publish.consumer.version>${project.version}</pact.publish.consumer.version>
         <pact.publish.consumer.branchName>local</pact.publish.consumer.branchName>
         <slf4j.version>2.0.17</slf4j.version>

@@ -23,10 +23,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 @Provider("oms-provider")
 @PactBroker(
- 
         url = "${pact.broker.url}",
         authentication = @PactBrokerAuth(token = "${pact.broker.token}")
- 
 )
 public class OmsProviderVerification {
     @RegisterExtension
