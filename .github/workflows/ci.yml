@@ -43,8 +43,8 @@ jobs:
         run: |
           mvn -Dtest=OmsProviderVerification \
               -Dgit.sha=${{ github.sha }} \
-              --broker-base-url=${{secrets.PACT_URL}} \
-              --broker-token=${{ secrets.PACT_TOKEN}}
+              --Dpact.base.url=${{secrets.PACT_URL}} \
+              --Dpact.broker.token=${{ secrets.PACT_TOKEN}}
               test
 
       - name: 5. Record provider deployment to production
