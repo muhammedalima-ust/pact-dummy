@@ -1,0 +1,76 @@
+name: Consumer Contract Test
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  consumer:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '22'
+
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-${{ runner.os }}
+
+      - name: Verify Java
+        working-directory: citesting
+        run: java -version
+
+      - name: Verify Maven
+        working-directory: citesting
+        run: mvn -version
+
+      - name: Start Pact Broker
+        working-directory: citesting
+        run: |
+          docker compose -f docker-compose.pact-broker.yml up -d
+
+      - name: Show Running Containers\
+        working-directory: citesting
+        run: docker ps
+
+      - name: Wait for Pact Broker
+        working-directory: citesting
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:9292/diagnostic/status/heartbeat; then
+              echo "Pact Broker is ready"
+              exit 0
+            fi
+            echo "Waiting for Pact Broker..."
+            sleep 5
+          done
+          echo "Pact Broker failed to start"
+          exit 1
+
+      - name: Run Consumer Tests
+        working-directory: citesting
+        run: mvn -Dtest=PosOmsConsumerPactTest test
+
+      - name: Show Generated Pact Files
+        working-directory: citesting
+        run: |
+          ls -R target
+
+      - name: Publish Pact to Broker
+        working-directory: citesting
+        run: |
+          mvn au.com.dius.pact.provider:maven:publish \
+            -Dgit.sha=${GITHUB_SHA::7} \
+            -Dgit.branch=${GITHUB_REF_NAME}
