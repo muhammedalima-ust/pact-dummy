@@ -46,7 +46,7 @@ jobs:
         working-directory: citesting
         run: |
           mvn \
-            -Dtest=OmsProviderVerificationTest \
+            -Dtest=OmsProviderVerification \
             -Dgit.sha=${GITHUB_SHA::7} \
             -Dgit.branch=${GITHUB_REF_NAME} \
             test
